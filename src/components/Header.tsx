@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Menu, X, BookOpen, Coins } from 'lucide-react'
+import { Menu, X, BookOpen, LogOut, Star } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 type Page = 'home' | 'tests' | 'certificates' | 'profile'
 
@@ -7,6 +8,7 @@ type Props = {
   activePage: Page
   onNavigate: (page: Page) => void
   coins: number
+  onSubscribe: () => void
 }
 
 const navItems: { id: Page; label: string }[] = [
@@ -16,8 +18,9 @@ const navItems: { id: Page; label: string }[] = [
   { id: 'profile', label: 'الملف الشخصي' },
 ]
 
-export default function Header({ activePage, onNavigate, coins }: Props) {
+export default function Header({ activePage, onNavigate, coins, onSubscribe }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { user, isPro, signOut } = useAuth()
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-neutral-100">
@@ -63,13 +66,44 @@ export default function Header({ activePage, onNavigate, coins }: Props) {
             ))}
           </nav>
 
-          {/* Coins */}
-          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-4 py-1.5">
-            <span className="text-sm font-bold text-amber-700">{coins.toLocaleString('ar-EG')}</span>
-            <div className="w-5 h-5 bg-amber-400 rounded-full flex items-center justify-center text-xs">
-              <Coins size={12} className="text-amber-900" />
+          {/* Right side: coins + pro + user */}
+          <div className="flex items-center gap-2">
+            {/* Coins */}
+            <div className="hidden sm:flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-full px-3 py-1.5">
+              <span className="text-sm font-bold text-amber-700">{coins.toLocaleString('ar-EG')}</span>
+              <span className="text-amber-500 text-base">🪙</span>
             </div>
-            <span className="text-xs text-amber-600 font-medium hidden sm:block">عملة</span>
+
+            {/* Pro badge or subscribe */}
+            {isPro ? (
+              <span className="hidden sm:flex items-center gap-1 bg-gradient-to-r from-amber-400 to-amber-500 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-sm">
+                <Star size={11} className="fill-white" />
+                PRO
+              </span>
+            ) : (
+              <button
+                onClick={onSubscribe}
+                className="hidden sm:flex items-center gap-1 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-all active:scale-95"
+              >
+                اشترك الآن
+              </button>
+            )}
+
+            {/* User avatar / logout */}
+            {user && (
+              <div className="flex items-center gap-2 mr-1">
+                <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center text-sm font-bold text-primary-700">
+                  {(user.user_metadata?.display_name || user.email || 'U')[0].toUpperCase()}
+                </div>
+                <button
+                  onClick={signOut}
+                  className="hidden sm:flex items-center gap-1 text-xs text-neutral-500 hover:text-red-500 transition-colors px-2 py-1 rounded-lg hover:bg-red-50"
+                  title="تسجيل الخروج"
+                >
+                  <LogOut size={14} />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -89,6 +123,25 @@ export default function Header({ activePage, onNavigate, coins }: Props) {
                 {item.label}
               </button>
             ))}
+            <div className="flex items-center gap-2 px-4 pt-2 border-t border-neutral-100 mt-1">
+              {!isPro && (
+                <button
+                  onClick={() => { onSubscribe(); setMenuOpen(false) }}
+                  className="flex-1 bg-primary-600 text-white text-sm font-bold py-2.5 rounded-xl text-center"
+                >
+                  اشترك الآن · $1/شهر
+                </button>
+              )}
+              {user && (
+                <button
+                  onClick={signOut}
+                  className="flex items-center gap-1 text-sm text-red-500 hover:bg-red-50 px-3 py-2 rounded-xl"
+                >
+                  <LogOut size={14} />
+                  خروج
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
