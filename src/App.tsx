@@ -13,7 +13,7 @@ import { Loader as Loader2 } from 'lucide-react'
 type Page = 'home' | 'tests' | 'certificates' | 'profile'
 
 function AppInner() {
-  const { session, loading } = useAuth()
+  const { session, loading, profile } = useAuth()
   const [activePage, setActivePage] = useState<Page>('home')
   const [showCheckout, setShowCheckout] = useState(false)
 
@@ -46,7 +46,7 @@ function AppInner() {
       <Header
         activePage={activePage}
         onNavigate={setActivePage}
-        coins={1250}
+        coins={profile?.coins ?? 0}
         onSubscribe={() => setShowCheckout(true)}
       />
       <main className="pb-20 md:pb-6">

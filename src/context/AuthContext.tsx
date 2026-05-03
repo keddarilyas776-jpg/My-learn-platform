@@ -2,9 +2,20 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 
+export type UserProfile = {
+  id: string
+  display_name: string
+  coins: number
+  avatar_url: string | null
+  badge: string
+  is_pro: boolean
+  created_at: string
+}
+
 type AuthContextType = {
   session: Session | null
   user: User | null
+  profile: UserProfile | null
   isPro: boolean
   loading: boolean
   setIsPro: (v: boolean) => void
@@ -14,6 +25,7 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType>({
   session: null,
   user: null,
+  profile: null,
   isPro: false,
   loading: true,
   setIsPro: () => {},
@@ -23,6 +35,7 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isPro, setIsPro] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -30,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       setUser(data.session?.user ?? null)
-      if (data.session?.user) fetchProStatus(data.session.user.id)
+      if (data.session?.user) fetchProfile(data.session.user.id)
       else setLoading(false)
     })
 
@@ -38,8 +51,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(newSession)
       setUser(newSession?.user ?? null)
       if (newSession?.user) {
-        (async () => { await fetchProStatus(newSession.user.id) })()
+        (async () => { await fetchProfile(newSession.user.id) })()
       } else {
+        setProfile(null)
         setIsPro(false)
         setLoading(false)
       }
@@ -48,13 +62,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  async function fetchProStatus(userId: string) {
+  async function fetchProfile(userId: string) {
     const { data } = await supabase
       .from('users_profile')
-      .select('is_pro')
+      .select('id, display_name, coins, avatar_url, badge, is_pro, created_at')
       .eq('id', userId)
       .maybeSingle()
-    setIsPro(data?.is_pro ?? false)
+    if (data) {
+      setProfile(data as UserProfile)
+      setIsPro(data.is_pro ?? false)
+    } else {
+      setIsPro(false)
+    }
     setLoading(false)
   }
 
@@ -63,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, user, isPro, loading, setIsPro, signOut }}>
+    <AuthContext.Provider value={{ session, user, profile, isPro, loading, setIsPro, signOut }}>
       {children}
     </AuthContext.Provider>
   )
