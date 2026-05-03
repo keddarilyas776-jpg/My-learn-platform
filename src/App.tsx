@@ -37,7 +37,7 @@ function AppInner() {
       case 'tests': return <TestsPage />
       case 'certificates': return <CertificatesPage />
       case 'profile': return <ProfilePage />
-      default: return <HomePage />
+      default: return <HomePage onSubscribe={() => setShowCheckout(true)} />
     }
   }
 

@@ -1,8 +1,10 @@
-import { BookOpen, Star, Play } from 'lucide-react'
+import { BookOpen, Star, Play, Lock } from 'lucide-react'
 import type { Course } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 
 type Props = {
   course: Course
+  onSubscribe: () => void
 }
 
 const colorMap: Record<string, { bg: string; badge: string; btn: string }> = {
@@ -53,21 +55,25 @@ function Stars({ rating }: { rating: number }) {
   )
 }
 
-export default function CourseCard({ course }: Props) {
+export default function CourseCard({ course, onSubscribe }: Props) {
+  const { isPro } = useAuth()
   const colors = colorMap[course.color] || colorMap.blue
-
-  const handleStart = () => {
-    window.open(course.youtube_url, '_blank', 'noopener,noreferrer')
-  }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden card-hover flex flex-col">
       {/* Card header banner */}
-      <div className={`bg-gradient-to-br ${colors.bg} p-5 flex items-center justify-between`}>
+      <div className={`bg-gradient-to-br ${colors.bg} p-5 flex items-center justify-between relative`}>
         <span className="text-4xl">{course.icon}</span>
         <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full backdrop-blur-sm">
           {course.difficulty}
         </span>
+        {!isPro && (
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center rounded-none">
+            <div className="bg-white/20 backdrop-blur-sm rounded-full p-2">
+              <Lock size={20} className="text-white" />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Card body */}
@@ -89,16 +95,32 @@ export default function CourseCard({ course }: Props) {
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${colors.badge}`}>
             {course.difficulty}
           </span>
+          {!isPro && (
+            <span className="flex items-center gap-1 text-xs font-semibold text-neutral-400 bg-neutral-100 px-2.5 py-1 rounded-full">
+              <Lock size={10} />
+              مقفل
+            </span>
+          )}
         </div>
 
         {/* CTA */}
-        <button
-          onClick={handleStart}
-          className={`w-full ${colors.btn} text-white text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-95`}
-        >
-          <Play size={14} className="fill-white" />
-          ابدأ الآن
-        </button>
+        {isPro ? (
+          <button
+            onClick={() => window.open(course.youtube_url, '_blank', 'noopener,noreferrer')}
+            className={`w-full ${colors.btn} text-white text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-95`}
+          >
+            <Play size={14} className="fill-white" />
+            ابدأ الآن
+          </button>
+        ) : (
+          <button
+            onClick={onSubscribe}
+            className="w-full bg-neutral-800 hover:bg-neutral-900 text-white text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-95"
+          >
+            <Lock size={14} />
+            اشترك للوصول · $1/شهر
+          </button>
+        )}
       </div>
     </div>
   )

@@ -6,7 +6,11 @@ import CategoryCard from '../components/CategoryCard'
 import CourseCard from '../components/CourseCard'
 import { Search } from 'lucide-react'
 
-export default function HomePage() {
+type Props = {
+  onSubscribe: () => void
+}
+
+export default function HomePage({ onSubscribe }: Props) {
   const [courses, setCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -134,7 +138,7 @@ export default function HomePage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filtered.map((course) => (
-              <CourseCard key={course.id} course={course} />
+              <CourseCard key={course.id} course={course} onSubscribe={onSubscribe} />
             ))}
           </div>
         )}
