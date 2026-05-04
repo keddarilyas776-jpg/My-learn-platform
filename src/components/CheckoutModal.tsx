@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { X, Lock, CreditCard, CircleCheck as CheckCircle2, CircleAlert as AlertCircle, Shield } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -10,6 +10,18 @@ type Props = {
 
 type PayMethod = 'card' | 'paypal'
 type Step = 'form' | 'loading' | 'success' | 'error'
+
+declare global {
+  interface Window {
+    paypal?: {
+      Buttons: (config: {
+        createOrder: (data: unknown, actions: { order: { create: (o: unknown) => Promise<string> } }) => Promise<string>
+        onApprove: (data: { orderID: string }, actions: { order: { capture: () => Promise<unknown> } }) => Promise<void>
+        onError: (err: unknown) => void
+      }) => { render: (selector: string) => void }
+    }
+  }
+}
 
 function CardIcon() {
   return (
@@ -50,6 +62,16 @@ function formatExpiry(val: string) {
   return digits
 }
 
+async function unlockSubscription(userId: string, setIsPro: (v: boolean) => void) {
+  await supabase.from('users_profile').upsert({
+    id: userId,
+    is_pro: true,
+    is_subscribed: true,
+    subscribed_at: new Date().toISOString(),
+  })
+  setIsPro(true)
+}
+
 export default function CheckoutModal({ onClose, onSuccess }: Props) {
   const { user, setIsPro } = useAuth()
   const [method, setMethod] = useState<PayMethod>('card')
@@ -59,51 +81,83 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
   const [cvv, setCvv] = useState('')
   const [cardName, setCardName] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
+  const paypalContainerRef = useRef<HTMLDivElement>(null)
+  const paypalRendered = useRef(false)
+
+  // Load PayPal SDK and render buttons when PayPal tab is active
+  useEffect(() => {
+    if (method !== 'paypal' || step !== 'form') return
+    if (paypalRendered.current) return
+
+    const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID as string
+    const scriptId = 'paypal-sdk'
+
+    function renderButtons() {
+      if (!window.paypal || !paypalContainerRef.current) return
+      paypalRendered.current = true
+
+      window.paypal.Buttons({
+        createOrder: (_data, actions) => {
+          return actions.order.create({
+            intent: 'CAPTURE',
+            purchase_units: [
+              {
+                amount: { currency_code: 'USD', value: '1.00' },
+                description: 'منصة التعلم التفاعلي — اشتراك شهري',
+              },
+            ],
+          })
+        },
+        onApprove: async (_data, actions) => {
+          setStep('loading')
+          await actions.order.capture()
+          if (user) {
+            await unlockSubscription(user.id, setIsPro)
+          }
+          setStep('success')
+          setTimeout(() => onSuccess(), 2800)
+        },
+        onError: (_err) => {
+          setErrorMsg('حدث خطأ أثناء معالجة الدفع عبر PayPal. يرجى المحاولة مجدداً.')
+        },
+      }).render('#paypal-button-container')
+    }
+
+    if (document.getElementById(scriptId)) {
+      renderButtons()
+      return
+    }
+
+    const script = document.createElement('script')
+    script.id = scriptId
+    script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=capture`
+    script.onload = renderButtons
+    document.body.appendChild(script)
+  }, [method, step, user, setIsPro, onSuccess])
+
+  // Reset PayPal render flag when switching tabs
+  useEffect(() => {
+    if (method !== 'paypal') {
+      paypalRendered.current = false
+    }
+  }, [method])
 
   async function handlePay(e: React.FormEvent) {
     e.preventDefault()
-    if (method === 'card') {
-      if (cardNumber.replace(/\s/g, '').length < 16) { setErrorMsg('رقم البطاقة غير مكتمل'); return }
-      if (expiry.length < 5) { setErrorMsg('تاريخ انتهاء الصلاحية غير صحيح'); return }
-      if (cvv.length < 3) { setErrorMsg('رمز CVV غير صحيح'); return }
-      if (!cardName.trim()) { setErrorMsg('يرجى إدخال اسم حامل البطاقة'); return }
-    }
+    if (cardNumber.replace(/\s/g, '').length < 16) { setErrorMsg('رقم البطاقة غير مكتمل'); return }
+    if (expiry.length < 5) { setErrorMsg('تاريخ انتهاء الصلاحية غير صحيح'); return }
+    if (cvv.length < 3) { setErrorMsg('رمز CVV غير صحيح'); return }
+    if (!cardName.trim()) { setErrorMsg('يرجى إدخال اسم حامل البطاقة'); return }
+
     setErrorMsg('')
     setStep('loading')
-
     await new Promise((r) => setTimeout(r, 2200))
 
     if (user) {
-      await supabase.from('users_profile').upsert({
-        id: user.id,
-        is_pro: true,
-        is_subscribed: true,
-        subscribed_at: new Date().toISOString(),
-      })
-      setIsPro(true)
+      await unlockSubscription(user.id, setIsPro)
     }
     setStep('success')
-    setTimeout(() => {
-      onSuccess()
-    }, 2800)
-  }
-
-  async function handlePayPal() {
-    setStep('loading')
-    await new Promise((r) => setTimeout(r, 2200))
-    if (user) {
-      await supabase.from('users_profile').upsert({
-        id: user.id,
-        is_pro: true,
-        is_subscribed: true,
-        subscribed_at: new Date().toISOString(),
-      })
-      setIsPro(true)
-    }
-    setStep('success')
-    setTimeout(() => {
-      onSuccess()
-    }, 2800)
+    setTimeout(() => onSuccess(), 2800)
   }
 
   return (
@@ -139,9 +193,7 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
         {/* Loading state */}
         {step === 'loading' && (
           <div className="p-10 flex flex-col items-center justify-center gap-4">
-            <div className="relative">
-              <div className="w-16 h-16 rounded-full border-4 border-primary-100 border-t-primary-600 animate-spin" />
-            </div>
+            <div className="w-16 h-16 rounded-full border-4 border-primary-100 border-t-primary-600 animate-spin" />
             <p className="font-bold text-neutral-700">جارٍ معالجة الدفع...</p>
             <p className="text-xs text-neutral-400">يرجى الانتظار، لا تغلق النافذة</p>
           </div>
@@ -275,25 +327,25 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
             )}
 
             {method === 'paypal' && (
-              <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 text-center">
-                  <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="space-y-4" ref={paypalContainerRef}>
+                <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
                     <PayPalIcon />
-                    <span className="text-lg font-black text-[#003087]">Pay</span>
-                    <span className="text-lg font-black text-[#009cde]">Pal</span>
+                    <span className="text-base font-black text-[#003087]">Pay</span>
+                    <span className="text-base font-black text-[#009cde]">Pal</span>
                   </div>
-                  <p className="text-sm text-neutral-600">ستُحال إلى صفحة PayPal الآمنة لإتمام الدفع</p>
-                  <p className="text-2xl font-black text-neutral-800 mt-3">$1.00 / شهر</p>
+                  <p className="text-xs text-neutral-500">ادفع $1.00 بأمان عبر PayPal</p>
                 </div>
-                <button
-                  onClick={handlePayPal}
-                  className="w-full bg-[#003087] hover:bg-[#002060] text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-3 transition-all active:scale-95"
-                >
-                  <PayPalIcon />
-                  <span className="text-[#009cde] font-black">Pay</span>
-                  <span className="text-[#56a0d3] font-black">Pal</span>
-                  <span>— ادفع الآن</span>
-                </button>
+
+                {errorMsg && (
+                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl px-3 py-2">
+                    <AlertCircle size={14} />
+                    {errorMsg}
+                  </div>
+                )}
+
+                {/* PayPal SDK renders its official button here */}
+                <div id="paypal-button-container" dir="ltr" />
               </div>
             )}
 
@@ -306,7 +358,7 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
                 </span>
                 <span className="flex items-center gap-1">
                   <Lock size={12} className="text-primary-400" />
-                  Powered by Stripe
+                  Powered by PayPal
                 </span>
                 <span className="flex items-center gap-1">
                   <CheckCircle2 size={12} className="text-amber-500" />
