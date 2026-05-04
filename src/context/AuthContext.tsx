@@ -9,6 +9,7 @@ export type UserProfile = {
   avatar_url: string | null
   badge: string
   is_pro: boolean
+  is_subscribed: boolean
   created_at: string
 }
 
@@ -65,12 +66,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function fetchProfile(userId: string) {
     const { data } = await supabase
       .from('users_profile')
-      .select('id, display_name, coins, avatar_url, badge, is_pro, created_at')
+      .select('id, display_name, coins, avatar_url, badge, is_pro, is_subscribed, created_at')
       .eq('id', userId)
       .maybeSingle()
     if (data) {
       setProfile(data as UserProfile)
-      setIsPro(data.is_pro ?? false)
+      // is_subscribed is the authoritative flag; fall back to is_pro for legacy rows
+      setIsPro(data.is_subscribed ?? data.is_pro ?? false)
     } else {
       setIsPro(false)
     }

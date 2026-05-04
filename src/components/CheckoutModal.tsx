@@ -77,6 +77,7 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
       await supabase.from('users_profile').upsert({
         id: user.id,
         is_pro: true,
+        is_subscribed: true,
         subscribed_at: new Date().toISOString(),
       })
       setIsPro(true)
@@ -94,6 +95,7 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
       await supabase.from('users_profile').upsert({
         id: user.id,
         is_pro: true,
+        is_subscribed: true,
         subscribed_at: new Date().toISOString(),
       })
       setIsPro(true)

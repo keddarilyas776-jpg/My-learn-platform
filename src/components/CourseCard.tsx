@@ -1,5 +1,7 @@
-import { BookOpen, Star, Play, Lock } from 'lucide-react'
+import { BookOpen, Star, Play, Lock, Loader } from 'lucide-react'
+import { useState } from 'react'
 import type { Course } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
 type Props = {
@@ -58,6 +60,35 @@ function Stars({ rating }: { rating: number }) {
 export default function CourseCard({ course, onSubscribe }: Props) {
   const { isPro } = useAuth()
   const colors = colorMap[course.color] || colorMap.blue
+  const [launching, setLaunching] = useState(false)
+
+  async function handleStart() {
+    setLaunching(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) { onSubscribe(); return }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
+      const res = await fetch(`${supabaseUrl}/functions/v1/check-subscription`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+      const json = await res.json()
+
+      if (json.subscribed === true) {
+        window.open(course.youtube_url, '_blank', 'noopener,noreferrer')
+      } else {
+        onSubscribe()
+      }
+    } catch {
+      onSubscribe()
+    } finally {
+      setLaunching(false)
+    }
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden card-hover flex flex-col">
@@ -106,11 +137,15 @@ export default function CourseCard({ course, onSubscribe }: Props) {
         {/* CTA */}
         {isPro ? (
           <button
-            onClick={() => window.open(course.youtube_url, '_blank', 'noopener,noreferrer')}
-            className={`w-full ${colors.btn} text-white text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-95`}
+            onClick={handleStart}
+            disabled={launching}
+            className={`w-full ${colors.btn} text-white text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed`}
           >
-            <Play size={14} className="fill-white" />
-            ابدأ الآن
+            {launching
+              ? <Loader size={14} className="animate-spin" />
+              : <Play size={14} className="fill-white" />
+            }
+            {launching ? 'جارٍ التحقق...' : 'ابدأ الآن'}
           </button>
         ) : (
           <button
