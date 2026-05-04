@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { Eye, EyeOff, BookOpen, Loader as Loader2, CircleAlert as AlertCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import LegalModal from '../components/LegalModal'
 
 type Mode = 'login' | 'signup'
+type LegalDoc = 'terms' | 'privacy' | null
 
 export default function AuthPage() {
   const [mode, setMode] = useState<Mode>('login')
+  const [legalDoc, setLegalDoc] = useState<LegalDoc>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
@@ -156,9 +159,9 @@ export default function AuthPage() {
 
             <p className="text-xs text-neutral-400 text-center mt-4">
               بالتسجيل أنت توافق على{' '}
-              <span className="text-primary-600 cursor-pointer hover:underline">شروط الاستخدام</span>
+              <button type="button" onClick={() => setLegalDoc('terms')} className="text-primary-600 hover:underline">شروط الاستخدام</button>
               {' '}و{' '}
-              <span className="text-primary-600 cursor-pointer hover:underline">سياسة الخصوصية</span>
+              <button type="button" onClick={() => setLegalDoc('privacy')} className="text-primary-600 hover:underline">سياسة الخصوصية</button>
             </p>
           </div>
         </div>
@@ -167,6 +170,8 @@ export default function AuthPage() {
           محمي بتشفير SSL 256-bit
         </p>
       </div>
+
+      {legalDoc && <LegalModal doc={legalDoc} onClose={() => setLegalDoc(null)} />}
     </div>
   )
 }
