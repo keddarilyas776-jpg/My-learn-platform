@@ -81,7 +81,7 @@ export default function HomePage({ onSubscribe }: Props) {
         </div>
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
           {creativeCategories.map((cat) => (
-            <CategoryCard key={cat.id} category={cat} />
+            <CategoryCard key={cat.id} category={cat} onSubscribe={onSubscribe} />
           ))}
         </div>
       </section>
@@ -97,7 +97,7 @@ export default function HomePage({ onSubscribe }: Props) {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {professionalCategories.map((cat) => (
-            <CategoryCard key={cat.id} category={cat} />
+            <CategoryCard key={cat.id} category={cat} onSubscribe={onSubscribe} />
           ))}
         </div>
       </section>
