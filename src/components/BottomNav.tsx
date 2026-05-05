@@ -1,20 +1,25 @@
-import { Home, ClipboardList, Award, User } from 'lucide-react'
+import { Hop as Home, ClipboardList, Award, User, ShieldCheck } from 'lucide-react'
 
-type Page = 'home' | 'tests' | 'certificates' | 'profile'
+type Page = 'home' | 'tests' | 'certificates' | 'profile' | 'admin'
 
 type Props = {
   activePage: Page
   onNavigate: (page: Page) => void
+  isAdmin: boolean
 }
 
-const navItems: { id: Page; label: string; icon: typeof Home }[] = [
+const baseNavItems: { id: Page; label: string; icon: typeof Home }[] = [
   { id: 'home', label: 'الرئيسية', icon: Home },
   { id: 'tests', label: 'الاختبارات', icon: ClipboardList },
   { id: 'certificates', label: 'الشهادات', icon: Award },
   { id: 'profile', label: 'الملف', icon: User },
 ]
 
-export default function BottomNav({ activePage, onNavigate }: Props) {
+export default function BottomNav({ activePage, onNavigate, isAdmin }: Props) {
+  const navItems = isAdmin
+    ? [...baseNavItems, { id: 'admin' as Page, label: 'الإدارة', icon: ShieldCheck }]
+    : baseNavItems
+
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-neutral-100 z-50 shadow-lg">
       <div className="flex">

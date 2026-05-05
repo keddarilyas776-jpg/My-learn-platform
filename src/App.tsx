@@ -8,12 +8,13 @@ import HomePage from './pages/HomePage'
 import TestsPage from './pages/TestsPage'
 import CertificatesPage from './pages/CertificatesPage'
 import ProfilePage from './pages/ProfilePage'
+import AdminPage from './pages/AdminPage'
 import { Loader as Loader2 } from 'lucide-react'
 
-type Page = 'home' | 'tests' | 'certificates' | 'profile'
+type Page = 'home' | 'tests' | 'certificates' | 'profile' | 'admin'
 
 function AppInner() {
-  const { session, loading, profile } = useAuth()
+  const { session, loading, profile, isAdmin } = useAuth()
   const [activePage, setActivePage] = useState<Page>('home')
   const [showCheckout, setShowCheckout] = useState(false)
 
@@ -37,6 +38,7 @@ function AppInner() {
       case 'tests': return <TestsPage />
       case 'certificates': return <CertificatesPage />
       case 'profile': return <ProfilePage />
+      case 'admin': return isAdmin ? <AdminPage /> : <HomePage onSubscribe={() => setShowCheckout(true)} />
       default: return <HomePage onSubscribe={() => setShowCheckout(true)} />
     }
   }
@@ -48,11 +50,12 @@ function AppInner() {
         onNavigate={setActivePage}
         coins={profile?.coins ?? 0}
         onSubscribe={() => setShowCheckout(true)}
+        isAdmin={isAdmin}
       />
       <main className="pb-20 md:pb-6">
         {renderPage()}
       </main>
-      <BottomNav activePage={activePage} onNavigate={setActivePage} />
+      <BottomNav activePage={activePage} onNavigate={setActivePage} isAdmin={isAdmin} />
       {showCheckout && (
         <CheckoutModal
           onClose={() => setShowCheckout(false)}

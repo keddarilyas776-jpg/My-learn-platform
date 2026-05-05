@@ -1,26 +1,31 @@
 import { useState } from 'react'
-import { Menu, X, BookOpen, LogOut, Star } from 'lucide-react'
+import { Menu, X, BookOpen, LogOut, Star, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
-type Page = 'home' | 'tests' | 'certificates' | 'profile'
+type Page = 'home' | 'tests' | 'certificates' | 'profile' | 'admin'
 
 type Props = {
   activePage: Page
   onNavigate: (page: Page) => void
   coins: number
   onSubscribe: () => void
+  isAdmin: boolean
 }
 
-const navItems: { id: Page; label: string }[] = [
+const baseNavItems: { id: Page; label: string }[] = [
   { id: 'home', label: 'الرئيسية' },
   { id: 'tests', label: 'الاختبارات' },
   { id: 'certificates', label: 'الشهادات' },
   { id: 'profile', label: 'الملف الشخصي' },
 ]
 
-export default function Header({ activePage, onNavigate, coins, onSubscribe }: Props) {
+export default function Header({ activePage, onNavigate, coins, onSubscribe, isAdmin }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
   const { user, isPro, signOut } = useAuth()
+
+  const navItems = isAdmin
+    ? [...baseNavItems, { id: 'admin' as Page, label: 'الإدارة' }]
+    : baseNavItems
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-neutral-100">
@@ -55,12 +60,13 @@ export default function Header({ activePage, onNavigate, coins, onSubscribe }: P
               <button
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
                   activePage === item.id
                     ? 'bg-primary-50 text-primary-700 font-semibold'
                     : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-800'
                 }`}
               >
+                {item.id === 'admin' && <ShieldCheck size={14} />}
                 {item.label}
               </button>
             ))}
@@ -68,13 +74,11 @@ export default function Header({ activePage, onNavigate, coins, onSubscribe }: P
 
           {/* Right side: coins + pro + user */}
           <div className="flex items-center gap-2">
-            {/* Coins */}
             <div className="hidden sm:flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-full px-3 py-1.5">
               <span className="text-sm font-bold text-amber-700">{coins.toLocaleString('ar-EG')}</span>
               <span className="text-amber-500 text-base">🪙</span>
             </div>
 
-            {/* Pro badge or subscribe */}
             {isPro ? (
               <span className="hidden sm:flex items-center gap-1 bg-gradient-to-r from-amber-400 to-amber-500 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-sm">
                 <Star size={11} className="fill-white" />
@@ -89,7 +93,6 @@ export default function Header({ activePage, onNavigate, coins, onSubscribe }: P
               </button>
             )}
 
-            {/* User avatar / logout */}
             {user && (
               <div className="flex items-center gap-2 mr-1">
                 <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center text-sm font-bold text-primary-700">
@@ -114,12 +117,13 @@ export default function Header({ activePage, onNavigate, coins, onSubscribe }: P
               <button
                 key={item.id}
                 onClick={() => { onNavigate(item.id); setMenuOpen(false) }}
-                className={`w-full text-right px-4 py-3 rounded-lg text-sm font-medium transition-all mb-1 ${
+                className={`w-full text-right px-4 py-3 rounded-lg text-sm font-medium transition-all mb-1 flex items-center gap-2 ${
                   activePage === item.id
                     ? 'bg-primary-50 text-primary-700 font-semibold'
                     : 'text-neutral-600 hover:bg-neutral-50'
                 }`}
               >
+                {item.id === 'admin' && <ShieldCheck size={14} />}
                 {item.label}
               </button>
             ))}
