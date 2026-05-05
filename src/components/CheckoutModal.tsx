@@ -89,7 +89,7 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
     if (method !== 'paypal' || step !== 'form') return
     if (paypalRendered.current) return
 
-    const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID as string
+    const clientId = 'Ae32J70pPAjgrbC93EZGsQI3zGcnCNS9kIY1XdrqP4GK7Zr2jtQfDV2qLP_dkGz0aJd_oo3Z9TDPNco-'
     const scriptId = 'paypal-sdk'
 
     function renderButtons() {
