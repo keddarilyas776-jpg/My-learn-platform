@@ -143,6 +143,13 @@ export default function HomePage({ onSubscribe }: Props) {
           </div>
         )}
       </section>
+
+      {/* Footer */}
+      <footer className="border-t border-neutral-200 mt-4 pt-5 pb-2 text-center">
+        <p className="text-xs text-neutral-400 font-medium tracking-wide">
+          إدارة المنصة: قدار إلياس &amp; ياسين أحمد الجارحي
+        </p>
+      </footer>
     </div>
   )
 }
