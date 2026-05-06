@@ -33,6 +33,44 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
+    // 1. التحقق من هوية المستخدم عبر الـ Token المرسل
+    const authHeader = req.headers.get('Authorization')!;
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 2. استثناء برمي ذكي لحسابك وحساب ياسين لفتح الكورسات فوراً
+    if (user.email === 'keddarilyas776@gmail.com' || user.email === 'yassinahmed@gmail.com') {
+      return new Response(
+        JSON.stringify({ subscribed: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 3. للمستخدمين الآخرين: جلب البيانات من قاعدة البيانات للتأكد من اشتراكهم
+    const { data: profile, error: dbError } = await supabaseClient
+      .from('users_profile')
+      .select('is_subscribed')
+      .eq('id', user.id)
+      .single();
+
+    if (dbError || !profile) {
+      return new Response(
+        JSON.stringify({ subscribed: false }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ subscribed: profile.is_subscribed }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
     const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) {
