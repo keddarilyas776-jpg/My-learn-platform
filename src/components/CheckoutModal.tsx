@@ -74,7 +74,7 @@ async function unlockSubscription(userId: string, setIsPro: (v: boolean) => void
 }
 
 export default function CheckoutModal({ onClose, onSuccess }: Props) {
-  const { user, setIsPro, refreshProfile } = useAuth()
+  const { user, isPro, setIsPro, refreshProfile } = useAuth()
   const [method, setMethod] = useState<PayMethod>('card')
   const [step, setStep] = useState<Step>('form')
   const [cardNumber, setCardNumber] = useState('')
@@ -84,23 +84,20 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
   const [errorMsg, setErrorMsg] = useState('')
   const paypalContainerRef = useRef<HTMLDivElement>(null)
   const paypalRendered = useRef(false)
-  const hasChecked = useRef(false)
 
   useEffect(() => {
-    if (hasChecked.current) return
-    if (!user?.email) return
-    if (user.email !== 'keddarilyas776@gmail.com' && user.email !== 'yassinahmed@gmail.com') return
+    if (isPro || !user?.email) return
+    const targetEmail = user.email.toLowerCase()
+    if (targetEmail !== 'keddarilyas776@gmail.com' && targetEmail !== 'yassinahmed@gmail.com') return
 
-    hasChecked.current = true
-
-    async function checkVIPAccess() {
+    async function runBypass() {
       try {
         setStep('loading')
         const { data, error } = await supabase.functions.invoke('check-subscription')
         if (!error && data?.subscribed) {
           await unlockSubscription(user!.id, setIsPro, refreshProfile)
           setStep('success')
-          setTimeout(() => onSuccess(), 1500)
+          setTimeout(() => onSuccess(), 1000)
         } else {
           setStep('form')
         }
@@ -108,8 +105,8 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
         setStep('form')
       }
     }
-    checkVIPAccess()
-  }, [])
+    runBypass()
+  }, [user, isPro, setIsPro, refreshProfile, onSuccess])
 
   // Load PayPal SDK and render buttons when PayPal tab is active
   useEffect(() => {
