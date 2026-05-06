@@ -84,6 +84,32 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
   const paypalContainerRef = useRef<HTMLDivElement>(null)
   const paypalRendered = useRef(false)
 
+  // تأثير ذكي للتحقق من السيرفر فور فتح النافذة لإيميلك وإيميل ياسين
+  useEffect(() => {
+    async function checkVIPAccess() {
+      if (!user?.email) return
+      
+      // إذا كان الإيميل خاصاً بك أو بياسين، يتم التفعيل الفوري عبر السيرفر
+      if (user.email === 'keddarilyas776@gmail.com' || user.email === 'yassinahmed@gmail.com') {
+        try {
+          setStep('loading')
+          const { data, error } = await supabase.functions.invoke('check-subscription')
+          
+          if (!error && data?.subscribed) {
+            await unlockSubscription(user.id, setIsPro)
+            setStep('success')
+            setTimeout(() => onSuccess(), 1500)
+          } else {
+            setStep('form')
+          }
+        } catch (e) {
+          setStep('form')
+        }
+      }
+    }
+    checkVIPAccess()
+  }, [user, setIsPro, onSuccess])
+
   // Load PayPal SDK and render buttons when PayPal tab is active
   useEffect(() => {
     if (method !== 'paypal' || step !== 'form') return
@@ -194,7 +220,7 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
         {step === 'loading' && (
           <div className="p-10 flex flex-col items-center justify-center gap-4">
             <div className="w-16 h-16 rounded-full border-4 border-primary-100 border-t-primary-600 animate-spin" />
-            <p className="font-bold text-neutral-700">جارٍ معالجة الدفع...</p>
+            <p className="font-bold text-neutral-700">جارٍ التحقق وتفعيل الحساب...</p>
             <p className="text-xs text-neutral-400">يرجى الانتظار، لا تغلق النافذة</p>
           </div>
         )}
@@ -206,12 +232,12 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
               <CheckCircle2 size={44} className="text-secondary-600 animate-scale-in" />
             </div>
             <div className="text-center">
-              <h3 className="text-xl font-black text-neutral-800">تم الاشتراك بنجاح!</h3>
+              <h3 className="text-xl font-black text-neutral-800">تم تفعيل الحساب بنجاح!</h3>
               <p className="text-neutral-500 text-sm mt-1">مرحباً بك في النادي المميز 🎉</p>
             </div>
             <div className="bg-secondary-50 border border-secondary-200 rounded-xl px-5 py-3 text-sm text-secondary-700 font-semibold flex items-center gap-2">
               <span className="text-lg">✅</span>
-              الاشتراك نشط · عضو PRO
+              تم التخطّي بنجاح · عضو PRO مفعّل
             </div>
           </div>
         )}
