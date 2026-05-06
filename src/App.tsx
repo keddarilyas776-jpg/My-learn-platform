@@ -14,7 +14,7 @@ import { Loader as Loader2 } from 'lucide-react'
 type Page = 'home' | 'tests' | 'certificates' | 'profile' | 'admin'
 
 function AppInner() {
-  const { session, loading, profile, isAdmin } = useAuth()
+  const { session, loading, profile, isAdmin, isPro } = useAuth()
   const [activePage, setActivePage] = useState<Page>('home')
   const [showCheckout, setShowCheckout] = useState(false)
 
@@ -56,7 +56,7 @@ function AppInner() {
         {renderPage()}
       </main>
       <BottomNav activePage={activePage} onNavigate={setActivePage} isAdmin={isAdmin} />
-      {showCheckout && (
+      {showCheckout && !isPro && (
         <CheckoutModal
           onClose={() => setShowCheckout(false)}
           onSuccess={() => setShowCheckout(false)}
