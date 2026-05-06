@@ -84,32 +84,32 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
   const [errorMsg, setErrorMsg] = useState('')
   const paypalContainerRef = useRef<HTMLDivElement>(null)
   const paypalRendered = useRef(false)
+  const hasChecked = useRef(false)
 
-  // تأثير ذكي للتحقق من السيرفر فور فتح النافذة لإيميلك وإيميل ياسين
   useEffect(() => {
+    if (hasChecked.current) return
+    if (!user?.email) return
+    if (user.email !== 'keddarilyas776@gmail.com' && user.email !== 'yassinahmed@gmail.com') return
+
+    hasChecked.current = true
+
     async function checkVIPAccess() {
-      if (!user?.email) return
-      
-      // إذا كان الإيميل خاصاً بك أو بياسين، يتم التفعيل الفوري عبر السيرفر
-      if (user.email === 'keddarilyas776@gmail.com' || user.email === 'yassinahmed@gmail.com') {
-        try {
-          setStep('loading')
-          const { data, error } = await supabase.functions.invoke('check-subscription')
-          
-          if (!error && data?.subscribed) {
-            await unlockSubscription(user.id, setIsPro, refreshProfile)
-            setStep('success')
-            setTimeout(() => onSuccess(), 1500)
-          } else {
-            setStep('form')
-          }
-        } catch (e) {
+      try {
+        setStep('loading')
+        const { data, error } = await supabase.functions.invoke('check-subscription')
+        if (!error && data?.subscribed) {
+          await unlockSubscription(user!.id, setIsPro, refreshProfile)
+          setStep('success')
+          setTimeout(() => onSuccess(), 1500)
+        } else {
           setStep('form')
         }
+      } catch {
+        setStep('form')
       }
     }
     checkVIPAccess()
-  }, [user, setIsPro, refreshProfile, onSuccess])
+  }, [])
 
   // Load PayPal SDK and render buttons when PayPal tab is active
   useEffect(() => {
