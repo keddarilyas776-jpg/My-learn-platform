@@ -98,7 +98,7 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
           if (!error && data?.subscribed) {
             await unlockSubscription(user.id, setIsPro)
             setStep('success')
-            setTimeout(() => onSuccess(), 1500)
+            setTimeout(() => { onSuccess(); window.location.reload() }, 1500)
           } else {
             setStep('form')
           }
