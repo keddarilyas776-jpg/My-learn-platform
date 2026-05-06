@@ -62,7 +62,7 @@ function formatExpiry(val: string) {
   return digits
 }
 
-async function unlockSubscription(userId: string, setIsPro: (v: boolean) => void) {
+async function unlockSubscription(userId: string, setIsPro: (v: boolean) => void, refreshProfile: () => Promise<void>) {
   await supabase.from('users_profile').upsert({
     id: userId,
     is_pro: true,
@@ -70,10 +70,11 @@ async function unlockSubscription(userId: string, setIsPro: (v: boolean) => void
     subscribed_at: new Date().toISOString(),
   })
   setIsPro(true)
+  await refreshProfile()
 }
 
 export default function CheckoutModal({ onClose, onSuccess }: Props) {
-  const { user, setIsPro } = useAuth()
+  const { user, setIsPro, refreshProfile } = useAuth()
   const [method, setMethod] = useState<PayMethod>('card')
   const [step, setStep] = useState<Step>('form')
   const [cardNumber, setCardNumber] = useState('')
@@ -96,9 +97,9 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
           const { data, error } = await supabase.functions.invoke('check-subscription')
           
           if (!error && data?.subscribed) {
-            await unlockSubscription(user.id, setIsPro)
+            await unlockSubscription(user.id, setIsPro, refreshProfile)
             setStep('success')
-            setTimeout(() => { onSuccess(); window.location.reload() }, 1500)
+            setTimeout(() => onSuccess(), 1500)
           } else {
             setStep('form')
           }
@@ -108,7 +109,7 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
       }
     }
     checkVIPAccess()
-  }, [user, setIsPro, onSuccess])
+  }, [user, setIsPro, refreshProfile, onSuccess])
 
   // Load PayPal SDK and render buttons when PayPal tab is active
   useEffect(() => {
@@ -138,7 +139,7 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
           setStep('loading')
           await actions.order.capture()
           if (user) {
-            await unlockSubscription(user.id, setIsPro)
+            await unlockSubscription(user.id, setIsPro, refreshProfile)
           }
           setStep('success')
           setTimeout(() => onSuccess(), 2800)
@@ -159,7 +160,7 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
     script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=capture`
     script.onload = renderButtons
     document.body.appendChild(script)
-  }, [method, step, user, setIsPro, onSuccess])
+  }, [method, step, user, setIsPro, refreshProfile, onSuccess])
 
   // Reset PayPal render flag when switching tabs
   useEffect(() => {
@@ -180,7 +181,7 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
     await new Promise((r) => setTimeout(r, 2200))
 
     if (user) {
-      await unlockSubscription(user.id, setIsPro)
+      await unlockSubscription(user.id, setIsPro, refreshProfile)
     }
     setStep('success')
     setTimeout(() => onSuccess(), 2800)

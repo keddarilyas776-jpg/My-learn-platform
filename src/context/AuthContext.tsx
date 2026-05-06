@@ -22,6 +22,7 @@ type AuthContextType = {
   isAdmin: boolean
   loading: boolean
   setIsPro: (v: boolean) => void
+  refreshProfile: () => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -33,6 +34,7 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   loading: true,
   setIsPro: () => {},
+  refreshProfile: async () => {},
   signOut: async () => {},
 })
 
@@ -85,12 +87,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false)
   }
 
+  async function refreshProfile() {
+    if (user) await fetchProfile(user.id)
+  }
+
   async function signOut() {
     await supabase.auth.signOut()
   }
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, isPro, isAdmin, loading, setIsPro, signOut }}>
+    <AuthContext.Provider value={{ session, user, profile, isPro, isAdmin, loading, setIsPro, refreshProfile, signOut }}>
       {children}
     </AuthContext.Provider>
   )
