@@ -14,6 +14,10 @@ export default function CategoryCard({ category, onSubscribe }: Props) {
   const [launching, setLaunching] = useState(false)
 
   async function handleClick() {
+    if (isPro) {
+      window.open(category.youtubeUrl, '_blank', 'noopener,noreferrer')
+      return
+    }
     setLaunching(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()

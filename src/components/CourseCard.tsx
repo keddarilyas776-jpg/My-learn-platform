@@ -63,6 +63,10 @@ export default function CourseCard({ course, onSubscribe }: Props) {
   const [launching, setLaunching] = useState(false)
 
   async function handleStart() {
+    if (isPro) {
+      window.open(course.youtube_url, '_blank', 'noopener,noreferrer')
+      return
+    }
     setLaunching(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
