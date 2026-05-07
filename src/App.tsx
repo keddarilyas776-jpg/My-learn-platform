@@ -9,9 +9,10 @@ import TestsPage from './pages/TestsPage'
 import CertificatesPage from './pages/CertificatesPage'
 import ProfilePage from './pages/ProfilePage'
 import AdminPage from './pages/AdminPage'
+import GamesPage from './pages/GamesPage'
 import { Loader as Loader2 } from 'lucide-react'
 
-type Page = 'home' | 'tests' | 'certificates' | 'profile' | 'admin'
+type Page = 'home' | 'tests' | 'certificates' | 'games' | 'profile' | 'admin'
 
 function AppInner() {
   const { session, loading, profile, isAdmin, isPro } = useAuth()
@@ -37,6 +38,7 @@ function AppInner() {
     switch (activePage) {
       case 'tests': return <TestsPage />
       case 'certificates': return <CertificatesPage />
+      case 'games': return <GamesPage onSubscribe={() => setShowCheckout(true)} />
       case 'profile': return <ProfilePage />
       case 'admin': return isAdmin ? <AdminPage /> : <HomePage onSubscribe={() => setShowCheckout(true)} />
       default: return <HomePage onSubscribe={() => setShowCheckout(true)} />

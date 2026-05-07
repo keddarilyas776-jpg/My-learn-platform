@@ -1,6 +1,6 @@
-import { Hop as Home, ClipboardList, Award, User, ShieldCheck } from 'lucide-react'
+import { Hop as Home, ClipboardList, Award, User, ShieldCheck, Gamepad2 } from 'lucide-react'
 
-type Page = 'home' | 'tests' | 'certificates' | 'profile' | 'admin'
+type Page = 'home' | 'tests' | 'certificates' | 'games' | 'profile' | 'admin'
 
 type Props = {
   activePage: Page
@@ -11,6 +11,7 @@ type Props = {
 const baseNavItems: { id: Page; label: string; icon: typeof Home }[] = [
   { id: 'home', label: 'الرئيسية', icon: Home },
   { id: 'tests', label: 'الاختبارات', icon: ClipboardList },
+  { id: 'games', label: 'الألعاب', icon: Gamepad2 },
   { id: 'certificates', label: 'الشهادات', icon: Award },
   { id: 'profile', label: 'الملف', icon: User },
 ]

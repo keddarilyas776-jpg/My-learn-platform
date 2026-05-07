@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Menu, X, BookOpen, LogOut, Star, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
-type Page = 'home' | 'tests' | 'certificates' | 'profile' | 'admin'
+type Page = 'home' | 'tests' | 'certificates' | 'games' | 'profile' | 'admin'
 
 type Props = {
   activePage: Page
@@ -15,6 +15,7 @@ type Props = {
 const baseNavItems: { id: Page; label: string }[] = [
   { id: 'home', label: 'الرئيسية' },
   { id: 'tests', label: 'الاختبارات' },
+  { id: 'games', label: 'الألعاب' },
   { id: 'certificates', label: 'الشهادات' },
   { id: 'profile', label: 'الملف الشخصي' },
 ]
