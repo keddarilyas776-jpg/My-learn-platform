@@ -74,7 +74,7 @@ async function unlockSubscription(userId: string, setIsPro: (v: boolean) => void
 }
 
 export default function CheckoutModal({ onClose, onSuccess }: Props) {
-  const { user, isPro, setIsPro, refreshProfile } = useAuth()
+  const { user, setIsPro, refreshProfile } = useAuth()
   const [method, setMethod] = useState<PayMethod>('card')
   const [step, setStep] = useState<Step>('form')
   const [cardNumber, setCardNumber] = useState('')
@@ -85,28 +85,6 @@ export default function CheckoutModal({ onClose, onSuccess }: Props) {
   const paypalContainerRef = useRef<HTMLDivElement>(null)
   const paypalRendered = useRef(false)
 
-  useEffect(() => {
-    if (isPro || !user?.email) return
-    const targetEmail = user.email.toLowerCase()
-    if (targetEmail !== 'keddarilyas776@gmail.com' && targetEmail !== 'yassinahmed@gmail.com') return
-
-    async function runBypass() {
-      try {
-        setStep('loading')
-        const { data, error } = await supabase.functions.invoke('check-subscription')
-        if (!error && data?.subscribed) {
-          await unlockSubscription(user!.id, setIsPro, refreshProfile)
-          setStep('success')
-          setTimeout(() => onSuccess(), 1000)
-        } else {
-          setStep('form')
-        }
-      } catch {
-        setStep('form')
-      }
-    }
-    runBypass()
-  }, [user, isPro, setIsPro, refreshProfile, onSuccess])
 
   // Load PayPal SDK and render buttons when PayPal tab is active
   useEffect(() => {
