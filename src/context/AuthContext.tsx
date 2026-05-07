@@ -47,17 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let settled = false
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (settled) return
-      if (data.session?.user) {
-        fetchProfile(data.session.user.id, data.session)
-      } else {
-        setLoading(false)
-      }
-    })
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, newSession) => {
       if (newSession?.user) {
         (async () => { await fetchProfile(newSession.user.id, newSession) })()
@@ -71,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })
 
-    return () => { settled = true; subscription.unsubscribe() }
+    return () => { subscription.unsubscribe() }
   }, [])
 
   async function fetchProfile(userId: string, currentSession: Session) {
