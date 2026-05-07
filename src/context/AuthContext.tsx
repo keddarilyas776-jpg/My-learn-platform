@@ -47,19 +47,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let settled = false
+
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
-      setUser(data.session?.user ?? null)
-      if (data.session?.user) fetchProfile(data.session.user.id)
-      else setLoading(false)
+      if (settled) return
+      if (data.session?.user) {
+        fetchProfile(data.session.user.id, data.session)
+      } else {
+        setLoading(false)
+      }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, newSession) => {
-      setSession(newSession)
-      setUser(newSession?.user ?? null)
       if (newSession?.user) {
-        (async () => { await fetchProfile(newSession.user.id) })()
+        (async () => { await fetchProfile(newSession.user.id, newSession) })()
       } else {
+        setSession(null)
+        setUser(null)
         setProfile(null)
         setIsPro(false)
         setIsAdmin(false)
@@ -67,28 +71,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => { settled = true; subscription.unsubscribe() }
   }, [])
 
-  async function fetchProfile(userId: string) {
+  async function fetchProfile(userId: string, currentSession: Session) {
     const { data } = await supabase
       .from('users_profile')
       .select('id, display_name, coins, avatar_url, badge, is_pro, is_subscribed, is_admin, created_at')
       .eq('id', userId)
       .maybeSingle()
-    if (data) {
-      setProfile(data as UserProfile)
-      setIsPro(data.is_subscribed ?? data.is_pro ?? false)
-      setIsAdmin(data.is_admin ?? false)
-    } else {
-      setIsPro(false)
-      setIsAdmin(false)
-    }
+
+    const pro = data ? (data.is_subscribed ?? data.is_pro ?? false) : false
+    const admin = data ? (data.is_admin ?? false) : false
+
+    setSession(currentSession)
+    setUser(currentSession.user)
+    setProfile(data as UserProfile ?? null)
+    setIsPro(pro)
+    setIsAdmin(admin)
     setLoading(false)
   }
 
   async function refreshProfile() {
-    if (user) await fetchProfile(user.id)
+    if (user && session) await fetchProfile(user.id, session)
   }
 
   async function signOut() {
