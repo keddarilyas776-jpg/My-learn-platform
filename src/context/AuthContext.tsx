@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq('id', userId)
       .maybeSingle()
 
-    const pro = data ? (data.is_subscribed ?? data.is_pro ?? false) : false
+    const pro = data ? (data.is_subscribed || data.is_pro || data.is_admin || false) : false
     const admin = data ? (data.is_admin ?? false) : false
 
     setSession(currentSession)

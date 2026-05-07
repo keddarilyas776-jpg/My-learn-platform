@@ -56,7 +56,7 @@ function AppInner() {
         {renderPage()}
       </main>
       <BottomNav activePage={activePage} onNavigate={setActivePage} isAdmin={isAdmin} />
-      {showCheckout && !isPro && (
+      {showCheckout && !isPro && !isAdmin && (
         <CheckoutModal
           onClose={() => setShowCheckout(false)}
           onSuccess={() => setShowCheckout(false)}
