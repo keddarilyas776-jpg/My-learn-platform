@@ -47,7 +47,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, newSession) => {
+    let initialSessionHandled = false
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (event === 'INITIAL_SESSION') {
+        initialSessionHandled = true
+        if (newSession?.user) {
+          (async () => { await fetchProfile(newSession.user.id, newSession) })()
+        } else {
+          setLoading(false)
+        }
+        return
+      }
       if (newSession?.user) {
         (async () => { await fetchProfile(newSession.user.id, newSession) })()
       } else {
@@ -56,6 +67,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null)
         setIsPro(false)
         setIsAdmin(false)
+        setLoading(false)
+      }
+    })
+
+    // Fallback: if onAuthStateChange doesn't fire INITIAL_SESSION, seed from getSession
+    supabase.auth.getSession().then(({ data }) => {
+      if (initialSessionHandled) return
+      if (data.session?.user) {
+        fetchProfile(data.session.user.id, data.session)
+      } else {
         setLoading(false)
       }
     })
