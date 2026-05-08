@@ -1,4 +1,4 @@
-import { BookOpen, Star, Play, Lock } from 'lucide-react'
+    import { BookOpen, Star, Play, Lock } from 'lucide-react'
 import type { Course } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -56,15 +56,17 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export default function CourseCard({ course, onSubscribe }: Props) {
-  const { isPro } = useAuth()
+  const { user } = useAuth() // استخدمنا user بدلاً من isPro لفتح الموقع
   const colors = colorMap[course.color] || colorMap.blue
 
   function handleStart() {
-    if (isPro) {
-      window.open(course.youtube_url, '_blank', 'noopener,noreferrer')
-    } else {
-      onSubscribe()
+    if (!user) {
+      // إذا لم يسجل دخول، يذهب لصفحة الدخول
+      window.location.href = '/auth'
+      return
     }
+    // إذا سجل دخول، يفتح الكورس مباشرة
+    window.open(course.youtube_url, '_blank', 'noopener,noreferrer')
   }
 
   return (
@@ -75,13 +77,6 @@ export default function CourseCard({ course, onSubscribe }: Props) {
         <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full backdrop-blur-sm">
           {course.difficulty}
         </span>
-        {!isPro && (
-          <div className="absolute inset-0 bg-black/30 flex items-center justify-center rounded-none">
-            <div className="bg-white/20 backdrop-blur-sm rounded-full p-2">
-              <Lock size={20} className="text-white" />
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Card body */}
@@ -103,11 +98,9 @@ export default function CourseCard({ course, onSubscribe }: Props) {
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${colors.badge}`}>
             {course.difficulty}
           </span>
-          
-          )}
         </div>
 
-                {/* CTA */}
+        {/* CTA Button - Open for everyone */}
         <button
           onClick={handleStart}
           className={`w-full ${colors.btn} text-white text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-95`}
@@ -117,6 +110,9 @@ export default function CourseCard({ course, onSubscribe }: Props) {
         </button>
       </div>
     </div>
+  )
+}
+
   )
 }
 
