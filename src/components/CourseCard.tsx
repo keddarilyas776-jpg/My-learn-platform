@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { BookOpen, Star, Play, X, CheckCircle, Send } from 'lucide-react'
-import ReactPlayer from 'react-player/youtube'
+import { BookOpen, Star, Play, X, Send } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import type { Course } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -22,12 +21,17 @@ const colorMap: Record<string, { bg: string; badge: string; btn: string }> = {
 export default function CourseCard({ course, onSubscribe }: Props) {
   const { user } = useAuth()
   const [showModal, setShowModal] = useState(false)
-  const [played, setPlayed] = useState(0)
   const [userRating, setUserRating] = useState(5)
   const [comment, setComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const colors = colorMap[course.color] || colorMap.blue
+
+  // تحويل رابط يوتيوب العادي إلى رابط Embed يعمل داخل الموقع
+  const getEmbedUrl = (url: string) => {
+    const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop()
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1`
+  }
 
   const handleStart = () => {
     if (!user) {
@@ -37,28 +41,18 @@ export default function CourseCard({ course, onSubscribe }: Props) {
     setShowModal(true)
   }
 
-  const handleProgress = (state: { played: number }) => {
-    setPlayed(state.played)
-  }
-
   const submitReview = async () => {
     if (!comment.trim()) return
     setIsSubmitting(true)
     try {
       const { error } = await supabase
         .from('course_reviews')
-        .insert([{ 
-          course_id: course.id, 
-          user_id: user?.id, 
-          rating: userRating, 
-          comment: comment 
-        }])
-
+        .insert([{ course_id: course.id, user_id: user?.id, rating: userRating, comment: comment }])
       if (error) throw error
-      alert('تم إرسال تقييمك بنجاح!')
+      alert('تم إرسال تقييمك!')
       setComment('')
     } catch (err) {
-      alert('حدث خطأ أو ربما قمت بالتقييم مسبقاً')
+      alert('حدث خطأ في الإرسال')
     } finally {
       setIsSubmitting(false)
     }
@@ -66,116 +60,65 @@ export default function CourseCard({ course, onSubscribe }: Props) {
 
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden card-hover flex flex-col h-full" dir="rtl">
+      <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden flex flex-col h-full" dir="rtl">
         <div className={`bg-gradient-to-br ${colors.bg} p-5 flex items-center justify-between`}>
           <span className="text-4xl">{course.icon}</span>
-          <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full backdrop-blur-sm">
-            {course.difficulty}
-          </span>
+          <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">{course.difficulty}</span>
         </div>
-
         <div className="p-5 flex flex-col flex-1 text-right">
-          <h3 className="text-base font-bold text-neutral-800 mb-1 leading-snug">{course.title}</h3>
-          <p className="text-sm text-neutral-500 leading-relaxed mb-3 flex-1">{course.description}</p>
-
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-1 text-xs text-neutral-500">
-              <BookOpen size={13} />
-              <span>{course.lessons_count} درس</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Star size={12} className="fill-amber-400 text-amber-400" />
-              <span className="text-xs font-bold text-neutral-600">{course.rating}</span>
-            </div>
-          </div>
-
-          <button
-            onClick={handleStart}
-            className={`w-full ${colors.btn} text-white text-sm font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95`}
-          >
-            <Play size={14} className="fill-white" />
+          <h3 className="text-base font-bold text-neutral-800 mb-1">{course.title}</h3>
+          <p className="text-sm text-neutral-500 mb-3 flex-1">{course.description}</p>
+          <button onClick={handleStart} className={`w-full ${colors.btn} text-white text-sm font-bold py-3 rounded-xl transition-all active:scale-95`}>
             إبدأ التعلم
           </button>
         </div>
       </div>
 
-      {/* Modal النافذة المنبثقة */}
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto bg-neutral-900/95 backdrop-blur-md">
-          <div className="bg-white w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl relative my-auto">
-            
-            {/* Header */}
-            <div className="p-4 flex justify-between items-center border-b border-neutral-100">
-              <button onClick={() => setShowModal(false)} className="text-neutral-400 hover:text-neutral-600 p-1">
-                <X size={24} />
-              </button>
-              <h3 className="font-bold text-neutral-800 truncate px-4">{course.title}</h3>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-2 overflow-y-auto">
+          <div className="bg-white w-full max-w-4xl rounded-2xl overflow-hidden relative my-auto">
+            <div className="p-4 flex justify-between items-center border-b">
+              <button onClick={() => setShowModal(false)}><X size={24} /></button>
+              <h3 className="font-bold text-sm truncate">{course.title}</h3>
             </div>
-
-            {/* Video Player */}
+            
+            {/* مشغل فيديو عادي لا يحتاج مكتبات خارجية */}
             <div className="relative pt-[56.25%] bg-black">
-              <ReactPlayer
-                url={course.youtube_url}
-                width="100%"
-                height="100%"
-                playing={true}
-                controls={true}
-                onProgress={handleProgress}
-                className="absolute top-0 left-0"
+              <iframe
+                src={getEmbedUrl(course.youtube_url)}
+                className="absolute top-0 left-0 w-full h-full"
+                allow="autoplay; fullscreen"
               />
             </div>
 
-            {/* Progress & Feedback Section */}
-            <div className="p-6 bg-neutral-50 text-right" dir="rtl">
-              {/* Progress Bar */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-neutral-600">تقدمك في المشاهدة</span>
-                  <span className="text-xs font-black text-emerald-600">{Math.round(played * 100)}%</span>
+            <div className="p-4 bg-neutral-50 text-right" dir="rtl">
+               {/* شريط تقدم "ثابت" للتجربة حالياً */}
+              <div className="mb-6">
+                <div className="h-1.5 w-full bg-neutral-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 w-[60%]" /> 
                 </div>
-                <div className="h-2.5 w-full bg-neutral-200 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-emerald-500 transition-all duration-500" 
-                    style={{ width: `${played * 100}%` }}
-                  />
-                </div>
+                <p className="text-[10px] text-neutral-400 mt-1">شريط التقدم يعمل عند المشاهدة الكاملة</p>
               </div>
 
-              {/* Review Form */}
-              <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm">
-                <h4 className="text-sm font-bold text-neutral-800 mb-4 flex items-center gap-2">
-                  <Star size={16} className="text-amber-400 fill-amber-400" />
-                  شاركنا رأيك في هذا الدرس
-                </h4>
-                
-                {/* Stars Selection */}
-                <div className="flex gap-2 mb-4">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button 
-                      key={star} 
-                      onClick={() => setUserRating(star)}
-                      className={`text-2xl transition-transform active:scale-110 ${userRating >= star ? 'text-amber-400' : 'text-neutral-200'}`}
-                    >
-                      ★
-                    </button>
+              <div className="bg-white p-4 rounded-xl border border-neutral-200">
+                <h4 className="text-xs font-bold mb-3">ما رأيك في الدرس؟</h4>
+                <div className="flex gap-1 mb-3">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <button key={s} onClick={() => setUserRating(s)} className={`text-xl ${userRating >= s ? 'text-amber-400' : 'text-neutral-200'}`}>★</button>
                   ))}
                 </div>
-
                 <textarea 
-                  className="w-full border border-neutral-200 rounded-xl p-3 text-sm mb-4 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                  placeholder="ما الذي أعجبك في هذا الدرس؟"
-                  rows={3}
+                  className="w-full border rounded-lg p-2 text-xs mb-3 outline-none focus:border-emerald-500"
+                  placeholder="اكتب تعليقك..."
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                 />
-
                 <button 
                   onClick={submitReview}
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  className="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-2"
                 >
-                  <Send size={14} />
-                  {isSubmitting ? 'جاري الإرسال...' : 'إرسال التقييم'}
+                  <Send size={12} /> إرسال
                 </button>
               </div>
             </div>
@@ -184,5 +127,4 @@ export default function CourseCard({ course, onSubscribe }: Props) {
       )}
     </>
   )
-                }
-          
+}
