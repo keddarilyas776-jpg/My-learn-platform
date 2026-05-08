@@ -30,18 +30,22 @@ function AppInner() {
     )
   }
 
-  if (!session) {
-    return <AuthPage />
-  }
+  // --- التعديل هنا: أزلنا شرط منع الدخول الإجباري ---
+  // سنقوم بالتحقق من الجلسة فقط عند الصفحات الحساسة
 
   const renderPage = () => {
+    // إذا لم يسجل دخول وحاول دخول صفحات "الاختبارات" أو "الشهادات" أو "الملف الشخصي"
+    if (!session && (activePage === 'tests' || activePage === 'certificates' || activePage === 'profile' || activePage === 'admin')) {
+      return <AuthPage />
+    }
+
     switch (activePage) {
       case 'tests': return <TestsPage />
       case 'certificates': return <CertificatesPage />
-      case 'games': return <GamesPage onSubscribe={() => setShowCheckout(true)} />
+      case 'games': return <GamesPage onSubscribe={() => window.location.href = '/auth'} />
       case 'profile': return <ProfilePage />
-      case 'admin': return isAdmin ? <AdminPage /> : <HomePage onSubscribe={() => setShowCheckout(true)} />
-      default: return <HomePage onSubscribe={() => setShowCheckout(true)} />
+      case 'admin': return isAdmin ? <AdminPage /> : <HomePage onSubscribe={() => window.location.href = '/auth'} />
+      default: return <HomePage onSubscribe={() => window.location.href = '/auth'} />
     }
   }
 
@@ -51,7 +55,7 @@ function AppInner() {
         activePage={activePage}
         onNavigate={setActivePage}
         coins={profile?.coins ?? 0}
-        onSubscribe={() => setShowCheckout(true)}
+        onSubscribe={() => window.location.href = '/auth'}
         isAdmin={isAdmin}
       />
       <main className="pb-20 md:pb-6">
