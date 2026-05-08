@@ -103,33 +103,21 @@ export default function CourseCard({ course, onSubscribe }: Props) {
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${colors.badge}`}>
             {course.difficulty}
           </span>
-          {!isPro && (
-            <span className="flex items-center gap-1 text-xs font-semibold text-neutral-400 bg-neutral-100 px-2.5 py-1 rounded-full">
-              <Lock size={10} />
-              مقفل
-            </span>
+          
           )}
         </div>
 
-        {/* CTA */}
-        {isPro ? (
-          <button
-            onClick={handleStart}
-            className={`w-full ${colors.btn} text-white text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-95`}
-          >
-            <Play size={14} className="fill-white" />
-            ابدأ الآن
-          </button>
-        ) : (
-          <button
-            onClick={onSubscribe}
-            className="w-full bg-neutral-800 hover:bg-neutral-900 text-white text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-95"
-          >
-            <Lock size={14} />
-            اشترك للوصول · $1/شهر
-          </button>
-        )}
+                {/* CTA */}
+        <button
+          onClick={handleStart}
+          className={`w-full ${colors.btn} text-white text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-95`}
+        >
+          <Play size={14} className="fill-white" />
+          ابدأ الآن
+        </button>
       </div>
     </div>
   )
+}
+
 }
