@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Gamepad2, Lock, Play } from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
+import { Gamepad2, Play } from 'lucide-react'
 
 type Game = {
   id: number
@@ -94,8 +93,7 @@ const difficultyColors: Record<string, string> = {
   صعب: 'bg-rose-100 text-rose-700',
 }
 
-export default function GamesPage({ onSubscribe }: { onSubscribe: () => void }) {
-  const { isPro } = useAuth()
+export default function GamesPage() {
   const [activeCategory, setActiveCategory] = useState('الكل')
 
   const filtered = activeCategory === 'الكل'
@@ -103,15 +101,11 @@ export default function GamesPage({ onSubscribe }: { onSubscribe: () => void }) 
     : games.filter((g) => g.category === activeCategory)
 
   function handlePlay(game: Game) {
-    if (isPro) {
-      window.open(game.url, '_blank', 'noopener,noreferrer')
-    } else {
-      onSubscribe()
-    }
+    window.open(game.url, '_blank', 'noopener,noreferrer')
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
+    <div className="max-w-7xl mx-auto px-4 py-6" dir="rtl">
       {/* Header */}
       <div className="bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-900 rounded-3xl p-8 mb-8 text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -119,7 +113,7 @@ export default function GamesPage({ onSubscribe }: { onSubscribe: () => void }) 
           <div className="absolute bottom-4 right-12 text-6xl">🏆</div>
           <div className="absolute top-1/2 right-1/3 text-7xl -translate-y-1/2">🧩</div>
         </div>
-        <div className="relative z-10">
+        <div className="relative z-10 text-right">
           <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-1.5 mb-4">
             <Gamepad2 size={14} />
             <span className="text-xs font-semibold">الألعاب التعليمية التفاعلية</span>
@@ -172,46 +166,29 @@ export default function GamesPage({ onSubscribe }: { onSubscribe: () => void }) 
         {filtered.map((game) => (
           <div
             key={game.id}
-            className="bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden card-hover flex flex-col"
+            className="bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden card-hover flex flex-col group"
           >
             {/* Game banner */}
             <div className={`bg-gradient-to-br ${game.bgGradient} p-5 flex items-center justify-between relative`}>
-              <span className="text-4xl">{game.icon}</span>
+              <span className="text-4xl transition-transform group-hover:scale-110 duration-300">{game.icon}</span>
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${difficultyColors[game.difficulty]}`}>
                 {game.difficulty}
               </span>
-              {!isPro && (
-                <div className="absolute inset-0 bg-black/25 flex items-center justify-center">
-                  <div className="bg-white/20 backdrop-blur-sm rounded-full p-2">
-                    <Lock size={18} className="text-white" />
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Body */}
-            <div className="p-4 flex flex-col flex-1">
+            <div className="p-4 flex flex-col flex-1 text-right">
               <span className="text-xs text-neutral-400 font-medium mb-1">{game.category}</span>
               <h3 className="text-sm font-bold text-neutral-800 mb-1 leading-snug">{game.title}</h3>
-              <p className="text-xs text-neutral-500 leading-relaxed mb-3 flex-1">{game.description}</p>
+              <p className="text-xs text-neutral-500 leading-relaxed mb-4 flex-1">{game.description}</p>
 
-              {isPro ? (
-                <button
-                  onClick={() => handlePlay(game)}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95"
-                >
-                  <Play size={12} className="fill-white" />
-                  العب الآن
-                </button>
-              ) : (
-                <button
-                  onClick={onSubscribe}
-                  className="w-full bg-neutral-800 hover:bg-neutral-900 text-white text-xs font-bold py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95"
-                >
-                  <Lock size={12} />
-                  اشترك للعب
-                </button>
-              )}
+              <button
+                onClick={() => handlePlay(game)}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md shadow-emerald-100"
+              >
+                <Play size={12} className="fill-white" />
+                العب الآن
+              </button>
             </div>
           </div>
         ))}
