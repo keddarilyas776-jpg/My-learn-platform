@@ -1,4 +1,4 @@
-    import { BookOpen, Star, Play, Lock } from 'lucide-react'
+import { BookOpen, Star, Play, Lock } from 'lucide-react'
 import type { Course } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -56,16 +56,14 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export default function CourseCard({ course, onSubscribe }: Props) {
-  const { user } = useAuth() // استخدمنا user بدلاً من isPro لفتح الموقع
+  const { user } = useAuth()
   const colors = colorMap[course.color] || colorMap.blue
 
   function handleStart() {
     if (!user) {
-      // إذا لم يسجل دخول، يذهب لصفحة الدخول
       window.location.href = '/auth'
       return
     }
-    // إذا سجل دخول، يفتح الكورس مباشرة
     window.open(course.youtube_url, '_blank', 'noopener,noreferrer')
   }
 
@@ -100,7 +98,7 @@ export default function CourseCard({ course, onSubscribe }: Props) {
           </span>
         </div>
 
-        {/* CTA Button - Open for everyone */}
+        {/* CTA */}
         <button
           onClick={handleStart}
           className={`w-full ${colors.btn} text-white text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-95`}
@@ -111,9 +109,4 @@ export default function CourseCard({ course, onSubscribe }: Props) {
       </div>
     </div>
   )
-}
-
-  )
-}
-
 }
