@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { BookOpen, Star, Play, X, CheckCircle } from 'lucide-react'
+import { BookOpen, Star, Play, X, CheckCircle, Send } from 'lucide-react'
 import ReactPlayer from 'react-player/youtube'
+import { supabase } from '../lib/supabase'
 import type { Course } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -18,25 +19,14 @@ const colorMap: Record<string, { bg: string; badge: string; btn: string }> = {
   rose: { bg: 'from-rose-500 to-rose-700', badge: 'bg-rose-100 text-rose-700', btn: 'bg-rose-600 hover:bg-rose-700' },
 }
 
-function Stars({ rating }: { rating: number }) {
-  return (
-    <div className="flex items-center gap-1">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          size={12}
-          className={star <= Math.round(rating) ? 'fill-amber-400 text-amber-400' : 'text-neutral-200'}
-        />
-      ))}
-      <span className="text-xs text-neutral-500 mr-1">{rating}</span>
-    </div>
-  )
-}
-
 export default function CourseCard({ course, onSubscribe }: Props) {
   const { user } = useAuth()
   const [showModal, setShowModal] = useState(false)
-  const [played, setPlayed] = useState(0) // نسبة المشاهدة من 0 إلى 1
+  const [played, setPlayed] = useState(0)
+  const [userRating, setUserRating] = useState(5)
+  const [comment, setComment] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
   const colors = colorMap[course.color] || colorMap.blue
 
   const handleStart = () => {
@@ -51,77 +41,78 @@ export default function CourseCard({ course, onSubscribe }: Props) {
     setPlayed(state.played)
   }
 
+  const submitReview = async () => {
+    if (!comment.trim()) return
+    setIsSubmitting(true)
+    try {
+      const { error } = await supabase
+        .from('course_reviews')
+        .insert([{ 
+          course_id: course.id, 
+          user_id: user?.id, 
+          rating: userRating, 
+          comment: comment 
+        }])
+
+      if (error) throw error
+      alert('تم إرسال تقييمك بنجاح!')
+      setComment('')
+    } catch (err) {
+      alert('حدث خطأ أو ربما قمت بالتقييم مسبقاً')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden card-hover flex flex-col h-full">
-        {/* Card header banner */}
-        <div className={`bg-gradient-to-br ${colors.bg} p-5 flex items-center justify-between relative`}>
+      <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden card-hover flex flex-col h-full" dir="rtl">
+        <div className={`bg-gradient-to-br ${colors.bg} p-5 flex items-center justify-between`}>
           <span className="text-4xl">{course.icon}</span>
           <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full backdrop-blur-sm">
             {course.difficulty}
           </span>
         </div>
 
-        {/* Card body */}
-        <div className="p-5 flex flex-col flex-1 text-right" dir="rtl">
+        <div className="p-5 flex flex-col flex-1 text-right">
           <h3 className="text-base font-bold text-neutral-800 mb-1 leading-snug">{course.title}</h3>
           <p className="text-sm text-neutral-500 leading-relaxed mb-3 flex-1">{course.description}</p>
 
-          {/* Meta */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-1 text-xs text-neutral-500">
               <BookOpen size={13} />
               <span>{course.lessons_count} درس</span>
             </div>
-            <Stars rating={course.rating} />
+            <div className="flex items-center gap-1">
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <span className="text-xs font-bold text-neutral-600">{course.rating}</span>
+            </div>
           </div>
 
-          {/* Difficulty badge */}
-          <div className="flex mb-4">
-            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${colors.badge}`}>
-              {course.difficulty}
-            </span>
-          </div>
-
-          {/* CTA */}
           <button
             onClick={handleStart}
-            className={`w-full ${colors.btn} text-white text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-95 shadow-lg shadow-neutral-100`}
+            className={`w-full ${colors.btn} text-white text-sm font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95`}
           >
             <Play size={14} className="fill-white" />
-            إبدأ الدرس الآن
+            إبدأ التعلم
           </button>
         </div>
       </div>
 
       {/* Modal النافذة المنبثقة */}
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-          {/* Overlay الخلفية */}
-          <div 
-            className="absolute inset-0 bg-neutral-900/90 backdrop-blur-sm" 
-            onClick={() => setShowModal(false)} 
-          />
-          
-          {/* Modal Content محتوى النافذة */}
-          <div className="bg-neutral-950 w-full max-w-5xl rounded-3xl overflow-hidden shadow-2xl relative z-10 border border-white/10">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto bg-neutral-900/95 backdrop-blur-md">
+          <div className="bg-white w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl relative my-auto">
+            
             {/* Header */}
-            <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent z-20">
-              <button 
-                onClick={() => setShowModal(false)}
-                className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors backdrop-blur-md"
-              >
-                <X size={20} />
+            <div className="p-4 flex justify-between items-center border-b border-neutral-100">
+              <button onClick={() => setShowModal(false)} className="text-neutral-400 hover:text-neutral-600 p-1">
+                <X size={24} />
               </button>
-              <div className="flex items-center gap-2 text-white">
-                <span className="text-sm font-medium hidden sm:block">{course.title}</span>
-                <div className="bg-emerald-500 p-1 rounded-full">
-                  <CheckCircle size={14} />
-                </div>
-              </div>
+              <h3 className="font-bold text-neutral-800 truncate px-4">{course.title}</h3>
             </div>
 
-            {/* Video Player المشغل */}
+            {/* Video Player */}
             <div className="relative pt-[56.25%] bg-black">
               <ReactPlayer
                 url={course.youtube_url}
@@ -134,26 +125,64 @@ export default function CourseCard({ course, onSubscribe }: Props) {
               />
             </div>
 
-            {/* Progress Bar & Footer */}
-            <div className="bg-neutral-900 p-4 sm:p-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-neutral-400">تقدمك في الدرس</span>
-                <span className="text-xs font-bold text-emerald-400">{Math.round(played * 100)}%</span>
+            {/* Progress & Feedback Section */}
+            <div className="p-6 bg-neutral-50 text-right" dir="rtl">
+              {/* Progress Bar */}
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-neutral-600">تقدمك في المشاهدة</span>
+                  <span className="text-xs font-black text-emerald-600">{Math.round(played * 100)}%</span>
+                </div>
+                <div className="h-2.5 w-full bg-neutral-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-emerald-500 transition-all duration-500" 
+                    style={{ width: `${played * 100}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300 ease-out" 
-                  style={{ width: `${played * 100}%` }}
+
+              {/* Review Form */}
+              <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm">
+                <h4 className="text-sm font-bold text-neutral-800 mb-4 flex items-center gap-2">
+                  <Star size={16} className="text-amber-400 fill-amber-400" />
+                  شاركنا رأيك في هذا الدرس
+                </h4>
+                
+                {/* Stars Selection */}
+                <div className="flex gap-2 mb-4">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button 
+                      key={star} 
+                      onClick={() => setUserRating(star)}
+                      className={`text-2xl transition-transform active:scale-110 ${userRating >= star ? 'text-amber-400' : 'text-neutral-200'}`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+
+                <textarea 
+                  className="w-full border border-neutral-200 rounded-xl p-3 text-sm mb-4 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                  placeholder="ما الذي أعجبك في هذا الدرس؟"
+                  rows={3}
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
                 />
+
+                <button 
+                  onClick={submitReview}
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                >
+                  <Send size={14} />
+                  {isSubmitting ? 'جاري الإرسال...' : 'إرسال التقييم'}
+                </button>
               </div>
-              <p className="text-[10px] text-neutral-500 mt-3 text-center uppercase tracking-widest">
-                سيتم حفظ تقدمك تلقائياً عند إغلاق النافذة
-              </p>
             </div>
           </div>
         </div>
       )}
     </>
   )
-            }
-                
+                }
+          
